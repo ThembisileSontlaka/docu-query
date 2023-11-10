@@ -14,14 +14,14 @@ load_dotenv()
 class HandleRetrival:
 
     def __init__(self) -> None:
-        self.embedding = self.get_embeddings()
+        self.embeddings = self.get_embeddings()
+        self.db = None
+        self.TEMPLATE = TEMPLATE = """
+        If you don't know the answer, just say that you don't know, don't try to make up an answer. Keep the answer as concise as possible.
+        {context}
+        Question: {question}
+        Helpful Answer:"""
 
-
-    TEMPLATE = """
-    If you don't know the answer, just say that you don't know, don't try to make up an answer. Keep the answer as concise as possible.
-    {context}
-    Question: {question}
-    Helpful Answer:"""
 
 # Step 1: Load Documents
     def load_documents(self, file_output_str):
@@ -30,10 +30,10 @@ class HandleRetrival:
         fileData = []
         for loader in loaders:
             fileData.extend(loader.load())
-
-        embeddings = self.get_embeddings()
-
-        return fileData
+        
+        self.db = self.database_instance(fileData, self.embeddings)
+    
+        return True
 
 
     def get_loaders(self, output_str):
@@ -66,7 +66,11 @@ class HandleRetrival:
 
 
     def database_instance(self, pdfData, embeddings):
-        db = DeepLake.from_documents(pdfData, embeddings)
+        try:
+            print("Create DB")
+            db = DeepLake.from_documents(pdfData, embeddings)
+        except:
+            print(e)
         # question = "What is the aesthetic of horror?"
         # searchDocs = db.similarity_search(question)
         # print(searchDocs[0].page_content)
@@ -74,21 +78,13 @@ class HandleRetrival:
 
 
     # #Step 3: Retrieve
-    def retrive_documents():
-        tokenizer = AutoTokenizer.from_pretrained("google/flan-t5-large")
-        model = AutoModelForSeq2SeqLM.from_pretrained("google/flan-t5-large")
+    def retriever(self):
         llm = HuggingFaceHub(
             repo_id="google/flan-t5-large",
             model_kwargs={"temperature": 0, "max_length": 512},
         )
 
-        return llm
-
-
-    def template():
-        
-        QA_PROMPT = PromptTemplate.from_template(template)
-        # return QA_PROMPT
+        QA_PROMPT = PromptTemplate.from_template(self.TEMPLATE)
         
         qa_chain = RetrievalQA.from_chain_type(
         llm=llm,
@@ -97,6 +93,11 @@ class HandleRetrival:
         chain_type_kwargs={"prompt": QA_PROMPT}
         )
 
+
+    def generate_response(self, llm, user_question):
+        
+        
+
         #Step 4: Generate
-        result = qa_chain({ "query" : "What is the aesthetic of horror?" })
+        result = qa_chain({ "query" : user_question})
         print(result["result"])

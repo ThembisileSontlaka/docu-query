@@ -1,6 +1,6 @@
 import os
 import gradio as gr
-from docu_retriever import HandleRetrival
+from docu_query import HandleRetrival
 
 
 introduction_str = """# Hello There!\n 
